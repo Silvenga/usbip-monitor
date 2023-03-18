@@ -1,0 +1,12 @@
+Exportable USB devices
+======================
+ - 192.168.0.121
+        1-7: unknown vendor : unknown product (0403:6001)
+           : /sys/devices/pci0000:00/0000:00:14.0/usb1/1-7
+           : (Defined at Interface level) (00/00/00)
+           :  0 - unknown class / unknown subclass / unknown protocol (ff/ff/ff)
+ - 192.168.0.122
+        1-7: unknown vendor : unknown product (0403:6001)
+           : /sys/devices/pci0000:00/0000:00:14.0/usb1/1-7
+           : (Defined at Interface level) (00/00/00)
+           :  0 - unknown class / unknown subclass / unknown protocol (ff/ff/ff)

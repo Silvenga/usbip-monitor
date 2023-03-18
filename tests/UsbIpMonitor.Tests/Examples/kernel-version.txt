@@ -1,0 +1,1 @@
+Linux version 5.4.0-1104-azure (buildd@lcy02-amd64-102) (gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04)) #110~18.04.1-Ubuntu SMP Sat Feb 11 17:41:21 UTC 2023

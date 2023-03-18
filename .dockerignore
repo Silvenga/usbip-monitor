@@ -1,0 +1,5 @@
+**/bin/
+**/obj/
+Dockerfile
+Dockerfile
+docker-compose.yaml
