@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -8,6 +8,14 @@
 
     <ItemGroup>
         <PackageReference Include="Pidgin" Version="3.2.1" />
+        <PackageReference Include="NLog" Version="5.1.2" />
+        <PackageReference Include="CommandLineParser" Version="2.9.1" />
+        <PackageReference Include="NLog.Extensions.Logging" Version="1.5.1" />
+        <PackageReference Include="Autofac" Version="7.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Core\Verbs\" />
     </ItemGroup>
 
 </Project>

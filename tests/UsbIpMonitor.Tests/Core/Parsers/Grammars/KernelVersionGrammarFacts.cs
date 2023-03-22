@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
 using Pidgin;
-using UsbIpMonitor.Core.Parsers.Grammars;
+using UsbIpMonitor.Core.Linux.Grammars;
 using Xunit;
 
 namespace UsbIpMonitor.Tests.Core.Parsers.Grammars

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace UsbIpMonitor.Core
+namespace UsbIpMonitor.Core.Linux
 {
     public class BinaryLocator
     {

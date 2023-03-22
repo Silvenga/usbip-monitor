@@ -1,7 +1,7 @@
 ﻿using Pidgin;
 using static Pidgin.Parser;
 
-namespace UsbIpMonitor.Core.Parsers.Grammars
+namespace UsbIpMonitor.Core.Linux.Grammars
 {
     public static class CommonGrammar
     {

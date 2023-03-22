@@ -1,8 +1,8 @@
 ﻿using Pidgin;
 using static Pidgin.Parser;
-using static UsbIpMonitor.Core.Parsers.Grammars.CommonGrammar;
+using static UsbIpMonitor.Core.Linux.Grammars.CommonGrammar;
 
-namespace UsbIpMonitor.Core.Parsers.Grammars
+namespace UsbIpMonitor.Core.Linux.Grammars
 {
     public static class KernelVersionGrammar
     {
