@@ -14,8 +14,4 @@
         <PackageReference Include="Autofac" Version="7.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Core\Verbs\" />
-    </ItemGroup>
-
 </Project>

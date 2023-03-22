@@ -54,7 +54,8 @@ namespace UsbIpMonitor.Core.Cli
                 errorSet.Add("--find-by-id is incompatible with --bus-id or --device-id.");
             }
 
-            if (File.Exists(options.UsbIpPath))
+            if (!string.IsNullOrWhiteSpace(options.UsbIpPath)
+                && !File.Exists(options.UsbIpPath))
             {
                 errorSet.Add($"--usb-ip-path was set to '{options.UsbIpPath}', but a file does does not exist at this path.");
             }
