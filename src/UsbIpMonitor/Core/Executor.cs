@@ -34,6 +34,10 @@ namespace UsbIpMonitor.Core
                     {
                         await RunImpl(options, cancellationToken);
                     }
+                    catch (TaskCanceledException)
+                    {
+                        // Ignored.
+                    }
                     catch (Exception e)
                     {
                         Logger.Warn(e, "Handled exception, will retry (--one-shot is not specified).");
