@@ -36,6 +36,7 @@ namespace UsbIpMonitor.Core
                     catch (Exception e)
                     {
                         Logger.Warn(e, "Handled exception, will retry (--one-shot is not specified).");
+                        await Task.Delay(TimeSpan.FromSeconds(9), cancellationToken);
                     }
                 }
 
@@ -137,7 +138,7 @@ namespace UsbIpMonitor.Core
             string? port;
             var getPortAttempt = 1;
             const int maxGetPortAttempts = 10;
-            while ((port = await MapRemoteToLocalPort(driver, busId, cancellationToken)) == null)
+            while ((port = await GetMyPort(driver, busId, cancellationToken)) == null)
             {
                 if (getPortAttempt >= maxGetPortAttempts)
                 {
@@ -152,7 +153,7 @@ namespace UsbIpMonitor.Core
             return port;
         }
 
-        private static async Task<string?> MapRemoteToLocalPort(IUsbIpDriver driver,
+        private static async Task<string?> GetMyPort(IUsbIpDriver driver,
                                                                 string busId,
                                                                 CancellationToken cancellationToken = default)
         {
