@@ -10,6 +10,7 @@ namespace UsbIpMonitor.Core.Linux
         LinuxKernelVersion ParseKernelVersion(string output);
 
         IEnumerable<UsbIpRemoteListResult> ParseUsbIpRemoteList(string output);
+        IEnumerable<ImportedDevice> ParseUsbIpPort(string output);
     }
 
     public class LinuxOutputParser : ILinuxOutputParser

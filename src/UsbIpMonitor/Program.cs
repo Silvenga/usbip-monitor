@@ -24,7 +24,17 @@ namespace UsbIpMonitor
 
                 using var source = OnCancelRequest(logger);
 
-                return await executor.Run(args, source.Token);
+                var status = await executor.Run(args, source.Token);
+
+                // This needs to be canceled before leaving scope.
+                source.Cancel();
+
+                return status;
+            }
+            catch (TaskCanceledException)
+            {
+                // Ignored.
+                return 2;
             }
             catch (Exception e)
             {
@@ -57,15 +67,21 @@ namespace UsbIpMonitor
 
             Console.CancelKeyPress += (_, _) =>
             {
-                logger.Info("Caught break, attempting to exit gracefully...");
-                source.Cancel();
+                if (!source.IsCancellationRequested)
+                {
+                    logger.Info("Caught break, attempting to exit gracefully...");
+                    source.Cancel();
+                }
             };
 
             AppDomain.CurrentDomain.ProcessExit += (_, _) =>
             {
-                logger.Info("Accepted a signal to terminate. Attempting to exit gracefully within 2 seconds.");
-                source.Cancel();
-                Thread.Sleep(2000);
+                if (!source.IsCancellationRequested)
+                {
+                    logger.Info("Accepted a signal to terminate. Attempting to exit gracefully within 2 seconds.");
+                    source.Cancel();
+                    Thread.Sleep(2000);
+                }
             };
 
             return source;

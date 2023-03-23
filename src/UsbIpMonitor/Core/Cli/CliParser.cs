@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text;
 using CommandLine;
+using NLog;
 
 namespace UsbIpMonitor.Core.Cli
 {
@@ -19,7 +21,8 @@ namespace UsbIpMonitor.Core.Cli
                              [NotNullWhen(true)] out CliOptions? options,
                              [NotNullWhen(false)] out IReadOnlyCollection<string>? errors)
         {
-            var result = Parser.Default.ParseArguments<CliOptions>(args);
+            var parser = new Parser(ConfigureParser);
+            var result = parser.ParseArguments<CliOptions>(args);
             if (result is Parsed<CliOptions>)
             {
                 if (!IsValid(result.Value, out errors))
@@ -36,6 +39,11 @@ namespace UsbIpMonitor.Core.Cli
             options = default;
             errors = Array.Empty<string>();
             return false;
+        }
+
+        private static void ConfigureParser(ParserSettings settings)
+        {
+            settings.HelpWriter = LoggingTextWriter.Default;
         }
 
         private static bool IsValid(CliOptions options, out IReadOnlyCollection<string> errors)
@@ -62,6 +70,23 @@ namespace UsbIpMonitor.Core.Cli
 
             errors = errorSet;
             return errors.Count == 0;
+        }
+
+        private class LoggingTextWriter : TextWriter
+        {
+            public static LoggingTextWriter Default { get; } = new();
+
+            private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+            public override Encoding Encoding { get; } = Encoding.UTF8;
+
+            public override void Write(string? value)
+            {
+                if (value != null)
+                {
+                    Logger.Error(value.TrimEnd());
+                }
+            }
         }
     }
 }

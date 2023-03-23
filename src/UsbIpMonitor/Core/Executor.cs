@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using UsbIpMonitor.Core.Cli;
+using UsbIpMonitor.Core.Linux.Grammars;
 
 namespace UsbIpMonitor.Core
 {
@@ -11,10 +13,12 @@ namespace UsbIpMonitor.Core
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly ICliParser _cliParser;
+        private readonly IUsbIpDriverFactory _factory;
 
-        public Executor(ICliParser cliParser)
+        public Executor(ICliParser cliParser, IUsbIpDriverFactory factory)
         {
             _cliParser = cliParser;
+            _factory = factory;
         }
 
         public async Task<int> Run(IEnumerable<string> args, CancellationToken cancellationToken = default)
@@ -23,7 +27,7 @@ namespace UsbIpMonitor.Core
 
             if (_cliParser.TryParse(args, out var options, out var errors))
             {
-                await RunImpl(options);
+                await RunImpl(options, cancellationToken);
                 return 0;
             }
 
@@ -36,9 +40,99 @@ namespace UsbIpMonitor.Core
             return 1;
         }
 
-        private Task RunImpl(CliOptions cliOptions)
+        private async Task RunImpl(CliOptions options, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var driver = _factory.Create(options);
+
+            Logger.Info("Verifying the existance of the remote exported USB device...");
+            var (busId, deviceId) = await GetRemoteDevice(driver, options, cancellationToken);
+
+            Logger.Info($"Attaching the device {deviceId ?? "<root>"}/{busId}...");
+            await driver.Attach(busId, deviceId, cancellationToken);
+
+            Logger.Info("Attempting to map the attached device to a local port...");
+            var port = await MapRemoteToLocalPort(driver, busId, cancellationToken);
+
+            Logger.Info($"Mapped attached device to local port '{port}', "
+                        + "waiting for termination signal before detaching port...");
+
+            try
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            catch (TaskCanceledException)
+            {
+                Logger.Info($"Recieved termination signal, attempting to gracefully detach monitored port '{port}'...");
+
+                // Wait at most 1 second before moving on.
+                using var detachTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+                await driver.Detach(port, detachTokenSource.Token);
+
+                Logger.Info("Gracefull detach completed.");
+            }
+        }
+
+        private static async Task<(string BusId, string? DeviceId)> GetRemoteDevice(IUsbIpDriver driver,
+                                                                                    CliOptions options,
+                                                                                    CancellationToken cancellationToken = default)
+        {
+            var host = (await driver.List(cancellationToken)).Single();
+
+            Logger.Debug($"Listed exported usb devices on host '{host.Name}'.");
+            foreach (var device in host.Devices)
+            {
+                Logger.Debug($"Found USB device '{device.BusId}' "
+                             + $"with identity '{device.VendorId}:{device.ProductId}' "
+                             + $"(Vendor: {device.Vendor}, Product: {device.Product}).");
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.FindId))
+            {
+                // Should attempt to find by id.
+                var devices = host.Devices
+                                  .Where(x => string.Equals($"{x.VendorId}:{x.ProductId}", options.FindId, StringComparison.Ordinal))
+                                  .ToList();
+
+                if (devices.Count == 0)
+                {
+                    throw new Exception($"Failed to locate any device by id '{options.FindId}'.");
+                }
+
+                if (devices.Count > 1)
+                {
+                    throw new Exception($"Found {devices.Count} by id '{options.FindId}', this isn't supported.");
+                }
+
+                var device = devices.Single();
+                return (device.BusId, null);
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.BusId))
+            {
+                Logger.Debug("Blindly trusting device id/bus id provided by input.");
+                return (options.BusId, options.DeviceId);
+            }
+
+            throw new Exception("Something impossible just happened...");
+        }
+
+        private static async Task<string> MapRemoteToLocalPort(IUsbIpDriver driver,
+                                                               string busId,
+                                                               CancellationToken cancellationToken = default)
+        {
+            IReadOnlyList<ImportedDevice> importedDevices = (await driver.Port(cancellationToken)).ToList();
+
+            Logger.Debug("Listed locally imported usb devices.");
+            foreach (var device in importedDevices)
+            {
+                Logger.Debug($"Found USB device '{device.Metadata.VendorId}:{device.Metadata.ProductId}' "
+                             + $"on port '{device.Status.Port}' "
+                             + $"from host '{device.Remote.RemoteHost}' (BusId: {device.Remote.RemoteBusId})"
+                             + $"(InUse: {device.Status.InUse}, Speed: {device.Status.Speed}).");
+            }
+
+            var attachedDevice = importedDevices.Single(x => x.Remote.RemoteBusId == busId && x.Remote.RemoteHost.Host == driver.RemoteHost);
+            return attachedDevice.Status.Port;
         }
     }
 }
