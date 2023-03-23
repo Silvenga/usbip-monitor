@@ -24,12 +24,15 @@ namespace UsbIpMonitor
 
                 using var source = OnCancelRequest(logger);
 
-                var status = await executor.Run(args, source.Token);
-
-                // This needs to be canceled before leaving scope.
-                source.Cancel();
-
-                return status;
+                try
+                {
+                    return await executor.Run(args, source.Token);
+                }
+                finally
+                {
+                    // This needs to be canceled before leaving scope.
+                    source.Cancel();
+                }
             }
             catch (TaskCanceledException)
             {

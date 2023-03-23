@@ -6,6 +6,7 @@ Exportable USB devices
            : /sys/devices/pci0000:00/0000:00:14.0/usb1/1-7
            : (Defined at Interface level) (00/00/00)
            :  0 - unknown class / unknown subclass / unknown protocol (ff/ff/ff)
+
       1-1.6: Yubico.com : Yubikey 4/5 OTP+U2F+CCID (1050:0407)
            : /sys/devices/pci0000:00/0000:00:1a.0/usb1/1-1/1-1.6
            : (Defined at Interface level) (00/00/00)

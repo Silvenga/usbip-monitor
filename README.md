@@ -15,9 +15,9 @@ modprobe vhci_driver
 # Attach the remote USB device:
 docker run -it --rm \
     --privileged \
-    -v /usr/lib/linux-tools:/usr/lib/linux-tools/:ro \
+    -v /usr/lib:/hostfs/usr/lib:ro \
     ghcr.io/silvenga/usbip-monitor:master \
     --host
 ```
 
-Note that `--privileged` must be used. This is a requirement of `usbip` (which is internally used). The read-only `/usr/lib/linux-tools` mount is to locate a distribution provided `usbip` binary on the host.
+Note that `--privileged` must be used. This is a requirement of `usbip` (which is internally used). The read-only `/usr/lib` mount is to locate a distribution provided `usbip` binary on the host.

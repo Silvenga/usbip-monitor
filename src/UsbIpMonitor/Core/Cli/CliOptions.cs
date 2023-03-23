@@ -21,7 +21,7 @@ namespace UsbIpMonitor.Core.Cli
 
         // Advanced options.
 
-        [Option('p', "usb-ip-path", HelpText = "Advanced: The path to a usbip binary. If not specified, a usbip binary will be discovered.")]
+        [Option("usb-ip-path", HelpText = "Advanced: The path to a usbip binary. If not specified, a usbip binary will be discovered.")]
         public string? UsbIpPath { get; set; }
     }
 }

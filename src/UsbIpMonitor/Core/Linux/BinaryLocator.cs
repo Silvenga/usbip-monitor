@@ -97,12 +97,15 @@ namespace UsbIpMonitor.Core.Linux
                 throw new ArgumentException("The current platform is unknown, therefore, not supported.");
             }
 
-            const string basePath = "/usr/lib/linux-tools/";
+            // We can't request a mount at /usr/lib since that breaks everything.
+            // We need to namespace the container fs and the host fs.
+            var searchPrefix = Environment.GetEnvironmentVariable("USBIP_MONITOR_HOSTFSPREFIX") ?? "/";
+            const string basePath = "/hostfs/usr/lib/linux-tools/";
 
             if (_kernelVersionWrapper.GetKernelVersion() is { } kernelVersion)
             {
                 Logger.Trace($"Detected that the current kernel is version '{kernelVersion}', returning this tool path.");
-                yield return Path.Combine(basePath, kernelVersion.ToString());
+                yield return Path.Combine(searchPrefix, basePath, kernelVersion.ToString());
             }
 
             foreach (var directory in Directory.EnumerateDirectories(basePath))
