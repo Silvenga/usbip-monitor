@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Pidgin;
 using static Pidgin.Parser;
 using static UsbIpMonitor.Core.Linux.Grammars.CommonGrammar;
+using String = System.String;
 
 namespace UsbIpMonitor.Core.Linux.Grammars
 {
@@ -49,27 +50,33 @@ namespace UsbIpMonitor.Core.Linux.Grammars
                                                                                 .Before(EndOfLine)
                                                                                 .Labelled(nameof(Metadata));
 
-        private static readonly Parser<char, ImportedDeviceRemote> Remote = Whitespaces
-                                                                            .Then(
-                                                                                Map(
-                                                                                    (_, uriStr) =>
-                                                                                    {
-                                                                                        var uri = new Uri(uriStr, UriKind.Absolute);
-                                                                                        var cleanUri = new UriBuilder(uri)
-                                                                                        {
-                                                                                            Path = null
-                                                                                        };
-                                                                                        return new ImportedDeviceRemote(
-                                                                                            cleanUri.Uri,
-                                                                                            uri.AbsolutePath.TrimStart('/')
-                                                                                        );
-                                                                                    },
-                                                                                    AnyCharExceptEndOfLine.Until(String(" -> ")),
-                                                                                    AnyCharExceptEndOfLine.AtLeastOnceString()
-                                                                                )
-                                                                            )
-                                                                            .Before(EndOfLine)
-                                                                            .Labelled(nameof(Remote));
+        private static readonly Parser<char, ImportedDeviceRemote?> Remote = Whitespaces
+                                                                             .Then(
+                                                                                 Map(
+                                                                                     (_, uriStr) =>
+                                                                                     {
+                                                                                         if (string.Equals(uriStr, "unknown host, remote port and remote busid",
+                                                                                                 StringComparison.Ordinal))
+                                                                                         {
+                                                                                             return null;
+                                                                                         }
+
+                                                                                         var uri = new Uri(uriStr, UriKind.Absolute);
+                                                                                         var cleanUri = new UriBuilder(uri)
+                                                                                         {
+                                                                                             Path = null
+                                                                                         };
+                                                                                         return new ImportedDeviceRemote(
+                                                                                             cleanUri.Uri,
+                                                                                             uri.AbsolutePath.TrimStart('/')
+                                                                                         );
+                                                                                     },
+                                                                                     AnyCharExceptEndOfLine.Until(String(" -> ")),
+                                                                                     AnyCharExceptEndOfLine.AtLeastOnceString()
+                                                                                 )
+                                                                             )
+                                                                             .Before(EndOfLine)
+                                                                             .Labelled(nameof(Remote));
 
         private static readonly Parser<char, ImportedDevice> Device = Whitespaces
                                                                       .Then(
@@ -137,7 +144,7 @@ namespace UsbIpMonitor.Core.Linux.Grammars
         }
     }
 
-    public record ImportedDevice(ImportedDeviceStatus Status, ImportedDeviceMetadata Metadata, ImportedDeviceRemote Remote);
+    public record ImportedDevice(ImportedDeviceStatus Status, ImportedDeviceMetadata Metadata, ImportedDeviceRemote? Remote);
 
     public record ImportedDeviceStatus(string Port, bool InUse, string Speed);
 

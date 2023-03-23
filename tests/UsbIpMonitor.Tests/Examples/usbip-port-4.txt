@@ -1,0 +1,6 @@
+Imported USB devices
+====================
+Port 00: <Port in Use> at Full Speed(12Mbps)
+       Future Technology Devices International, Ltd : FT232 Serial (UART) IC (0403:6001)
+       1-1 -> unknown host, remote port and remote busid
+           -> remote bus/dev 001/003
