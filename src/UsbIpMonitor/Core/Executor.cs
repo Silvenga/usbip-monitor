@@ -27,7 +27,8 @@ namespace UsbIpMonitor.Core
 
             if (_cliParser.TryParse(args, out var options, out var errors))
             {
-                while (!options.OneShot)
+                while (!options.OneShot
+                       && !cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
@@ -65,16 +66,23 @@ namespace UsbIpMonitor.Core
             Logger.Info("Attempting to map the attached device to a local port...");
             var myPort = await GetMyPortOrThrow(driver, busId, cancellationToken);
 
-            Logger.Info($"Mapped attached device to local port '{myPort}', "
-                        + "waiting for termination signal before detaching port...");
-
             try
             {
+                Logger.Info($"Mapped attached device to local port '{myPort}', "
+                            + "waiting for termination signal before detaching port...");
+
                 var poolingInterval = TimeSpan.FromSeconds(3);
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     await Task.Delay(poolingInterval, cancellationToken);
-                    myPort = await GetMyPortOrThrow(driver, busId, cancellationToken);
+                    var lastPort = await GetMyPortOrThrow(driver, busId, cancellationToken);
+
+                    if (lastPort != myPort)
+                    {
+                        Logger.Warn($"The port changed from '{myPort}' -> '{lastPort}'. It's odd, but following it.");
+                    }
+
+                    myPort = lastPort;
                 }
             }
             finally
@@ -154,8 +162,8 @@ namespace UsbIpMonitor.Core
         }
 
         private static async Task<string?> GetMyPort(IUsbIpDriver driver,
-                                                                string busId,
-                                                                CancellationToken cancellationToken = default)
+                                                     string busId,
+                                                     CancellationToken cancellationToken = default)
         {
             IReadOnlyList<ImportedDevice> importedDevices = (await driver.Port(cancellationToken)).ToList();
 
