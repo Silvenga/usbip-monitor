@@ -62,7 +62,9 @@ namespace UsbIpMonitor.Core
             RemoteHost = remote.Host;
             RemotePort = remote.IsDefaultPort ? 3240 : remote.Port;
 
-            _remoteEndpoint = RemoteHost + ":" + RemotePort;
+            // usbip does not appear to support changing the port.
+            // And the client side doesn't seem to support using a non-standard port.
+            _remoteEndpoint = RemoteHost;
 
             _usbIpPath = usbIpPath;
             _linuxOutputParser = linuxOutputParser;
