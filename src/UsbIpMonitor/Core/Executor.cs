@@ -51,36 +51,27 @@ namespace UsbIpMonitor.Core
             await driver.Attach(busId, deviceId, cancellationToken);
 
             Logger.Info("Attempting to map the attached device to a local port...");
+            var myPort = await GetMyPortOrThrow(driver, busId, cancellationToken);
 
-            string? port;
-            var getPortAttempt = 1;
-            const int maxGetPortAttempts = 10;
-            while ((port = await MapRemoteToLocalPort(driver, busId, cancellationToken)) == null)
-            {
-                if (getPortAttempt >= maxGetPortAttempts)
-                {
-                    throw new Exception("Failed to map port, bailing...");
-                }
-
-                Logger.Info($"Unable to map to a locally attached service, waiting 1s to try again (Attempt: {getPortAttempt}/{maxGetPortAttempts}).");
-                await Task.Delay(1000, cancellationToken);
-                getPortAttempt++;
-            }
-
-            Logger.Info($"Mapped attached device to local port '{port}', "
+            Logger.Info($"Mapped attached device to local port '{myPort}', "
                         + "waiting for termination signal before detaching port...");
 
             try
             {
-                await Task.Delay(Timeout.Infinite, cancellationToken);
+                var poolingInterval = TimeSpan.FromSeconds(3);
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(poolingInterval, cancellationToken);
+                    myPort = await GetMyPortOrThrow(driver, busId, cancellationToken);
+                }
             }
-            catch (TaskCanceledException)
+            finally
             {
-                Logger.Info($"Recieved termination signal, attempting to gracefully detach monitored port '{port}'...");
+                Logger.Info($"Recieved termination signal, attempting to gracefully detach monitored port '{myPort}'...");
 
                 // Wait at most 1 second before moving on.
                 using var detachTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-                await driver.Detach(port, detachTokenSource.Token);
+                await driver.Detach(myPort, detachTokenSource.Token);
 
                 Logger.Info("Graceful detach completed.");
             }
@@ -128,6 +119,26 @@ namespace UsbIpMonitor.Core
             }
 
             throw new Exception("Something impossible just happened...");
+        }
+
+        private static async Task<string> GetMyPortOrThrow(IUsbIpDriver driver, string busId, CancellationToken cancellationToken)
+        {
+            string? port;
+            var getPortAttempt = 1;
+            const int maxGetPortAttempts = 10;
+            while ((port = await MapRemoteToLocalPort(driver, busId, cancellationToken)) == null)
+            {
+                if (getPortAttempt >= maxGetPortAttempts)
+                {
+                    throw new Exception("Failed to map port, bailing...");
+                }
+
+                Logger.Info($"Unable to map to a locally attached service, waiting 1s to try again (Attempt: {getPortAttempt}/{maxGetPortAttempts}).");
+                await Task.Delay(1000, cancellationToken);
+                getPortAttempt++;
+            }
+
+            return port;
         }
 
         private static async Task<string?> MapRemoteToLocalPort(IUsbIpDriver driver,
