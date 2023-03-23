@@ -73,8 +73,9 @@ namespace UsbIpMonitor
             {
                 if (!source.IsCancellationRequested)
                 {
-                    logger.Info("Caught break, attempting to exit gracefully...");
+                    logger.Info("Caught break, attempting to exit gracefully within 2 seconds...");
                     source.Cancel();
+                    Thread.Sleep(2000);
                 }
             };
 
@@ -82,7 +83,7 @@ namespace UsbIpMonitor
             {
                 if (!source.IsCancellationRequested)
                 {
-                    logger.Info("Accepted a signal to terminate. Attempting to exit gracefully within 2 seconds.");
+                    logger.Info("Accepted a signal to terminate. Attempting to exit gracefully within 2 seconds...");
                     source.Cancel();
                     Thread.Sleep(2000);
                 }
