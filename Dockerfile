@@ -27,6 +27,7 @@ RUN set -se \
 WORKDIR /app
 COPY --from=builder /app .
 
-ENV USBIP_MONITOR_HOSTFSPREFIX=/hostfs
+ENV USBIP_MONITOR_HOSTFSPREFIX=/hostfs \
+    LOG_LEVEL=Info
 
 ENTRYPOINT ["dotnet", "UsbIpMonitor.dll"]
