@@ -27,7 +27,18 @@ namespace UsbIpMonitor.Core
 
             if (_cliParser.TryParse(args, out var options, out var errors))
             {
-                await RunImpl(options, cancellationToken);
+                while (!options.OneShot)
+                {
+                    try
+                    {
+                        await RunImpl(options, cancellationToken);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Warn(e, "Handled exception, will retry (--one-shot is not specified).");
+                    }
+                }
+
                 return 0;
             }
 
