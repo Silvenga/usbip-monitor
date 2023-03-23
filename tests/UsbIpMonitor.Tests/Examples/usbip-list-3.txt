@@ -1,0 +1,6 @@
+Exportable USB devices
+======================
+ - br1
+        1-7: Future Technology Devices International, Ltd : FT232 Serial (UART) IC (0403:6001)
+           : /sys/devices/pci0000:00/0000:00:14.0/usb1/1-7
+           : (Defined at Interface level) (00/00/00)

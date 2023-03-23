@@ -3,7 +3,7 @@ using Pidgin;
 using UsbIpMonitor.Core.Linux.Grammars;
 using Xunit;
 
-namespace UsbIpMonitor.Tests.Core.Parsers.Grammars
+namespace UsbIpMonitor.Tests.Core.Linux.Grammars
 {
     public class KernelVersionGrammarFacts
     {
