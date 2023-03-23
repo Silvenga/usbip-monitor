@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Pidgin;
 using UsbIpMonitor.Core.Linux.Grammars;
 using Xunit;
@@ -43,6 +44,33 @@ namespace UsbIpMonitor.Tests.Core.Linux.Grammars
 
             // Assert
             result.Should().HaveCount(2);
+        }
+
+        [Fact]
+        public void When_port_name_contains_parentheses_then_device_should_be_returned()
+        {
+            var input = ResourceHelper.GetFile("usbip-port-3.txt");
+
+            // Act
+            var result = UsbIpPortGrammar.Grammar.ParseOrThrow(input).ToList();
+
+            // Assert
+            using (new AssertionScope())
+            {
+                var device = result.Should().ContainSingle().Subject;
+
+                device.Status.InUse.Should().BeTrue();
+                device.Status.Port.Should().Be("00");
+                device.Status.Speed.Should().Be("Full Speed(12Mbps)");
+
+                device.Metadata.Vendor.Should().Be("Future Technology Devices International, Ltd");
+                device.Metadata.Product.Should().Be("FT232 Serial (UART) IC");
+                device.Metadata.VendorId.Should().Be("0403");
+                device.Metadata.ProductId.Should().Be("6001");
+
+                device.Remote.RemoteBusId.Should().Be("1-7");
+                device.Remote.RemoteHost.Should().Be(new Uri("usbip://br1:3240"));
+            }
         }
     }
 }

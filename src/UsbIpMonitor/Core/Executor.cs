@@ -82,7 +82,7 @@ namespace UsbIpMonitor.Core
                 using var detachTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
                 await driver.Detach(port, detachTokenSource.Token);
 
-                Logger.Info("Gracefull detach completed.");
+                Logger.Info("Graceful detach completed.");
             }
         }
 
@@ -141,8 +141,8 @@ namespace UsbIpMonitor.Core
             {
                 Logger.Debug($"Found USB device '{device.Metadata.VendorId}:{device.Metadata.ProductId}' "
                              + $"on port '{device.Status.Port}' "
-                             + $"from host '{device.Remote.RemoteHost}' (BusId: {device.Remote.RemoteBusId})"
-                             + $"(InUse: {device.Status.InUse}, Speed: {device.Status.Speed}).");
+                             + $"from host '{device.Remote.RemoteHost}' "
+                             + $"(BusId: {device.Remote.RemoteBusId}, InUse: {device.Status.InUse}, Speed: {device.Status.Speed}).");
             }
 
             var attachedDevice = importedDevices.SingleOrDefault(x => x.Remote.RemoteBusId == busId && x.Remote.RemoteHost.Host == driver.RemoteHost);

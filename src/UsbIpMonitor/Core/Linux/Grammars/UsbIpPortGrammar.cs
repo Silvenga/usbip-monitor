@@ -44,19 +44,7 @@ namespace UsbIpMonitor.Core.Linux.Grammars
 
         private static readonly Parser<char, ImportedDeviceMetadata> Metadata = Whitespaces
                                                                                 .Then(
-                                                                                    Map(
-                                                                                        (vendorStr, productStr, vendorId, productId) =>
-                                                                                            new ImportedDeviceMetadata(
-                                                                                                vendorStr.Trim(),
-                                                                                                productStr.Trim(),
-                                                                                                vendorId.Trim(),
-                                                                                                productId.Trim()
-                                                                                            ),
-                                                                                        AsciiStringExcept(':').Before(Char(':')).Labelled("VendorStr"),
-                                                                                        AsciiStringExcept('(').Before(Char('(')).Labelled("ProductStr"),
-                                                                                        AsciiStringExcept(':').Before(Char(':')).Labelled("VendorId"),
-                                                                                        AsciiStringExcept(')').Before(Char(')')).Labelled("ProductId")
-                                                                                    )
+                                                                                    new MetadataParser()
                                                                                 )
                                                                                 .Before(EndOfLine)
                                                                                 .Labelled(nameof(Metadata));
@@ -100,6 +88,53 @@ namespace UsbIpMonitor.Core.Linux.Grammars
                                                                                     .Labelled(nameof(Devices));
 
         public static readonly Parser<char, IEnumerable<ImportedDevice>> Grammar = Header.Then(Devices);
+
+        private class MetadataParser : Parser<char, ImportedDeviceMetadata>
+        {
+            public override bool TryParse(ref ParseState<char> state,
+                                          ref PooledList<Expected<char>> expecteds,
+                                          out ImportedDeviceMetadata result)
+            {
+                if (AnyCharExceptEndOfLine.AtLeastOnceString().TryParse(ref state, ref expecteds, out var line))
+                {
+                    try
+                    {
+                        // Future Technology Devices International, Ltd : FT232 Serial (UART) IC (0403:6001)
+
+                        var span = line.AsSpan();
+
+                        // (0403
+                        var vendorIdStart = span.LastIndexOf('(') + 1;
+                        var vendorIdEnd = span.LastIndexOf(':');
+                        var vendorId = new string(span[vendorIdStart..vendorIdEnd]);
+
+                        // :6001)
+                        var productIdStart = vendorIdEnd + 1;
+                        var productIdEnd = span.LastIndexOf(')');
+                        var productId = new string(span[productIdStart..productIdEnd]);
+
+                        // Future Technology Devices International, Ltd : FT232 Serial
+                        var productEnd = vendorIdStart - 2;
+
+                        var vendorEnd = span[..productEnd].IndexOf(':') - 1;
+                        var productStart = vendorEnd + 3;
+
+                        var vendor = new string(span[..vendorEnd]);
+                        var product = new string(span[productStart..productEnd]);
+
+                        result = new ImportedDeviceMetadata(vendor, product, vendorId, productId);
+                        return true;
+                    }
+                    catch
+                    {
+                        // If we failed to parse (e.g. something was unexpected) return false to fall back to the parent parser.
+                    }
+                }
+
+                result = default!;
+                return false;
+            }
+        }
     }
 
     public record ImportedDevice(ImportedDeviceStatus Status, ImportedDeviceMetadata Metadata, ImportedDeviceRemote Remote);
