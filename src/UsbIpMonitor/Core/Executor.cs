@@ -51,7 +51,21 @@ namespace UsbIpMonitor.Core
             await driver.Attach(busId, deviceId, cancellationToken);
 
             Logger.Info("Attempting to map the attached device to a local port...");
-            var port = await MapRemoteToLocalPort(driver, busId, cancellationToken);
+
+            string? port;
+            var getPortAttempt = 1;
+            const int maxGetPortAttempts = 10;
+            while ((port = await MapRemoteToLocalPort(driver, busId, cancellationToken)) == null)
+            {
+                if (getPortAttempt >= maxGetPortAttempts)
+                {
+                    throw new Exception("Failed to map port, bailing...");
+                }
+
+                Logger.Info($"Unable to map to a locally attached service, waiting 1s to try again (Attempt: {getPortAttempt}/{maxGetPortAttempts}).");
+                await Task.Delay(1000, cancellationToken);
+                getPortAttempt++;
+            }
 
             Logger.Info($"Mapped attached device to local port '{port}', "
                         + "waiting for termination signal before detaching port...");
@@ -83,7 +97,7 @@ namespace UsbIpMonitor.Core
             {
                 Logger.Debug($"Found USB device '{device.BusId}' "
                              + $"with identity '{device.VendorId}:{device.ProductId}' "
-                             + $"(Vendor: {device.Vendor}, Product: {device.Product}).");
+                             + $"(Vendor: '{device.Vendor}', Product: '{device.Product}').");
             }
 
             if (!string.IsNullOrWhiteSpace(options.FindId))
@@ -116,9 +130,9 @@ namespace UsbIpMonitor.Core
             throw new Exception("Something impossible just happened...");
         }
 
-        private static async Task<string> MapRemoteToLocalPort(IUsbIpDriver driver,
-                                                               string busId,
-                                                               CancellationToken cancellationToken = default)
+        private static async Task<string?> MapRemoteToLocalPort(IUsbIpDriver driver,
+                                                                string busId,
+                                                                CancellationToken cancellationToken = default)
         {
             IReadOnlyList<ImportedDevice> importedDevices = (await driver.Port(cancellationToken)).ToList();
 
@@ -131,8 +145,8 @@ namespace UsbIpMonitor.Core
                              + $"(InUse: {device.Status.InUse}, Speed: {device.Status.Speed}).");
             }
 
-            var attachedDevice = importedDevices.Single(x => x.Remote.RemoteBusId == busId && x.Remote.RemoteHost.Host == driver.RemoteHost);
-            return attachedDevice.Status.Port;
+            var attachedDevice = importedDevices.SingleOrDefault(x => x.Remote.RemoteBusId == busId && x.Remote.RemoteHost.Host == driver.RemoteHost);
+            return attachedDevice?.Status.Port;
         }
     }
 }
